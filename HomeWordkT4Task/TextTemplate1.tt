@@ -1,0 +1,127 @@
+﻿<#@ template language="C#" hostspecific="true" #>
+<#@ output extension=".cs" #>
+<#@ assembly name="System.Data" #>
+<#@ import namespace="System" #>
+<#@ import namespace="System.Data" #>
+<#@ import namespace="System.Data.SqlClient" #>
+<#@ import namespace="System.IO" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="System.Globalization" #>
+<#@ import namespace="System.Text.RegularExpressions" #>
+
+<#
+    string connectionString = "Server=localhost;Database=Northwind;Trusted_Connection=True;";
+
+    string GetCSharpType(string sqlType, bool isNullable)
+    {
+        string csharpType = sqlType.ToLower(CultureInfo.InvariantCulture) switch
+        {
+            "nvarchar" => "string",
+            "varchar" => "string",
+            "char" => "string",
+            "nchar" => "string",
+            "text" => "string",
+            "ntext" => "string",
+            "int" => "int",
+            "smallint" => "short",
+            "tinyint" => "byte",
+            "bigint" => "long",
+            "bit" => "bool",
+            "float" => "float",
+            "real" => "float",
+            "money" => "decimal",
+            "smallmoney" => "decimal",
+            "decimal" => "decimal",
+            "numeric" => "decimal",
+            "datetime" => "DateTime",
+            "datetime2" => "DateTime",
+            "smalldatetime" => "DateTime",
+            "date" => "DateTime",
+            "time" => "TimeSpan",
+            "timestamp" => "byte[]",
+            "uniqueidentifier" => "Guid",
+            "varbinary" => "byte[]",
+            "binary" => "byte[]",
+            "image" => "byte[]",
+            _ => "object"
+        };
+
+        if (isNullable && csharpType != "string" && csharpType != "byte[]")
+        {
+            csharpType += "?";
+        }
+
+        return csharpType;
+    }
+
+    string GetClassName(string tableName)
+    {
+        // Use regular expression to convert table names to singular
+        return Regex.Replace(tableName, @"s$", "");
+    }
+
+    string GetClassDefinition(string tableName)
+    {
+        string query = $@"
+        SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_NAME = '{tableName}' AND TABLE_SCHEMA = 'dbo'";
+                 
+        var properties = new List<string>();
+
+        using (SqlConnection connection = new SqlConnection(connectionString))
+        {
+            connection.Open();
+            using (SqlCommand command = new SqlCommand(query, connection))
+            using (SqlDataReader reader = command.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    string columnName = reader["COLUMN_NAME"].ToString();
+                    string dataType = reader["DATA_TYPE"].ToString();
+                    bool isNullable = reader["IS_NULLABLE"].ToString() == "YES";
+                    string csharpType = GetCSharpType(dataType, isNullable);
+
+                    properties.Add($"    public {csharpType} {columnName} {{ get; set; }}");
+                }
+            }
+        }
+
+        string className = GetClassName(tableName);
+
+        return $@"
+public class {className}
+{{
+{string.Join(Environment.NewLine, properties)}
+}}";
+    }
+
+    string folderPath = Path.Combine(Host.ResolvePath("."), "Models");
+
+    if (!Directory.Exists(folderPath))
+    {
+        Directory.CreateDirectory(folderPath);
+    }
+
+    var tableNames = new List<string>();
+
+    using (SqlConnection connection = new SqlConnection(connectionString))
+    {
+        connection.Open();
+        using (SqlCommand command = new SqlCommand("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_CATALOG='Northwind'", connection))
+        using (SqlDataReader reader = command.ExecuteReader())
+        {
+            while (reader.Read())
+            {
+                tableNames.Add(reader["TABLE_NAME"].ToString());
+            }
+        }
+    }
+
+    foreach (var tableName in tableNames)
+    {
+        string classContent = GetClassDefinition(tableName);
+        string filePath = Path.Combine(folderPath, $"{GetClassName(tableName)}.cs");
+        File.WriteAllText(filePath, classContent);
+    }
+#>

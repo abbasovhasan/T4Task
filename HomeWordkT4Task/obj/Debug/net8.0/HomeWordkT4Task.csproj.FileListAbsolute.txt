@@ -1,0 +1,5 @@
+C:\Users\abbas\OneDrive\Documents\C#\HomeWordkT4Task\HomeWordkT4Task\obj\Debug\net8.0\HomeWordkT4Task.csproj.AssemblyReference.cache
+C:\Users\abbas\OneDrive\Documents\C#\HomeWordkT4Task\HomeWordkT4Task\obj\Debug\net8.0\HomeWordkT4Task.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\abbas\OneDrive\Documents\C#\HomeWordkT4Task\HomeWordkT4Task\obj\Debug\net8.0\HomeWordkT4Task.AssemblyInfoInputs.cache
+C:\Users\abbas\OneDrive\Documents\C#\HomeWordkT4Task\HomeWordkT4Task\obj\Debug\net8.0\HomeWordkT4Task.AssemblyInfo.cs
+C:\Users\abbas\OneDrive\Documents\C#\HomeWordkT4Task\HomeWordkT4Task\obj\Debug\net8.0\HomeWordkT4Task.csproj.CoreCompileInputs.cache
